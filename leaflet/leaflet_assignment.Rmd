@@ -1,0 +1,36 @@
+---
+title: "Developing Data Products - Week 2 Assignment"
+author: "Jiachang (Ernest) Xu"
+date: "12/17/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(leaflet)
+```
+
+```{r map, echo=TRUE}
+my_map = leaflet()
+my_map = addTiles(my_map)
+```
+
+```{r add markers, echo=TRUE}
+my_map = addMarkers(my_map, lat = 34.069494, lng = -118.2941258, 
+                    icon = makeIcon(iconUrl = "./bak_kung_2.png",
+                                    iconWidth = 31, iconHeight = 31,
+                                    iconAnchorX = 16, iconAnchorY = 16),
+                    popup = "<a href='https://www.yelp.com/biz/bak-kung-2-korean-bbq-los-angeles'>Bak Kung 2: The Best KBBQ in Los Angeles</a>")
+my_map
+```
+
+```{r map clusters, echo=TRUE}
+df = data.frame(lat = runif(3000, min = 34.00, max = 35.00),
+                lng = runif(3000, min = -119.00, max = -118.00))
+cluster_map = leaflet()
+cluster_map = addTiles(cluster_map)
+cluster_map = addMarkers(cluster_map, lat = df$lat, lng = df$lng, clusterOptions = markerClusterOptions())
+cluster_map = addCircles(cluster_map, weight = 15, lat = 34.50, lng = -118.50, radius = 50000)
+cluster_map
+```
+
