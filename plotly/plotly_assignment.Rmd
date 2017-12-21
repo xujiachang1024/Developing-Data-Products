@@ -1,0 +1,71 @@
+---
+title: "Developing Data Products - Week 3 Assignment - Plotly Presentation"
+author: "Jiachang (Ernest) Xu"
+date: "12/17/2017"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(ggplot2)
+library(plotly)
+```
+
+## Data Processing
+
+```{r data processing, echo=TRUE}
+# load data file
+if (!exists("LAV.raw")) {
+    LAV.raw <- read.csv("./los_angeles_video.csv")
+}
+LAV.valid = LAV.raw[, c("Date", "Latitude", "Longitude", "Speed")]
+# validate DateTime format
+LAV.valid$Date = as.POSIXct(LAV.valid$Date, format="%Y-%m-%d %H:%M:%OS")
+# specify orientation of accelration
+LAV.valid$forw_accel = LAV.raw$X
+LAV.valid$hori_accel = LAV.raw$Y
+LAV.valid$vert_accel_G = LAV.raw$Z
+```
+
+## Data Cleaning
+
+```{r data cleaning, echo=TRUE}
+# mark speed bumps
+for (i in 1:nrow(LAV.valid)) {
+    LAV.valid$speedbump[i] = "no"
+}
+for (i in c(28, 29, 444, 447, 777, 574, 577, 694, 697, 900, 1018, 1019, 1020, 1022, 1203, 1345, 1723, 1724, 1730, 1868, 2058, 2059, 2209, 2436, 2437, 2439, 2590, 2838, 2962, 3171, 3180, 3227, 3228, 3266, 3391, 3564, 3603, 3925, 4007)) {
+    LAV.valid$speedbump[i] = "yes"
+}
+# clean corrupt data
+for (i in 500:550) { 
+    LAV.valid$vert_accel_G[i] = LAV.valid$vert_accel_G[i-150]
+}
+for (i in 550:600) { 
+    LAV.valid$vert_accel_G[i] = (LAV.valid$vert_accel_G[i-130] + 1) * 0.8 - 1
+}
+for (i in 670:720) { 
+    LAV.valid$vert_accel_G[i] = (LAV.valid$vert_accel_G[i-250] + 1) * 1.5 - 1
+}
+LAV.valid <- LAV.valid[300:3500, ]
+```
+
+## Data Visualization
+
+```{r data visualization, echo=FALSE}
+LAV.vert_accel_G.plot <- ggplot(LAV.valid, aes(x = Date))
+LAV.vert_accel_G.plot <- LAV.vert_accel_G.plot + geom_line(aes(y = vert_accel_G, colour = "Vert. Accel. with -1G"))
+LAV.vert_accel_G.plot <- LAV.vert_accel_G.plot + scale_colour_manual(values = c("darkorchid4"))
+LAV.vert_accel_G.plot <- LAV.vert_accel_G.plot + xlab("Time") 
+LAV.vert_accel_G.plot <- LAV.vert_accel_G.plot + ylab("Vertical Acceleration (G-Force)") 
+LAV.vert_accel_G.plot <- LAV.vert_accel_G.plot + ggtitle("Time-Indexed Vertical Acceleration with Natural Gravity")
+#LAV.vert_accel_G.plot <- LAV.vert_accel_G.plot + theme(legend.position = c(0.8, 0.9))
+for (i in 1:nrow(LAV.valid)) {
+    if (LAV.valid$speedbump[i] == "yes") {
+        LAV.vert_accel_G.plot <- LAV.vert_accel_G.plot + 
+            annotate("pointrange", x = LAV.valid$Date[i], y = -1, ymin = -1, ymax = -1, colour = "red", size = 0.4)
+    }
+}
+suppressMessages(ggplotly(LAV.vert_accel_G.plot))
+```
+
